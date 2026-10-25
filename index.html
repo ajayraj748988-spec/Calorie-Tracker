@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FormTrack – calories and workouts</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f5;--card:#fff;--ink:#0f1a2b;--mute:#5b6779;--line:#d9dfe8;--accent:#2f5bff;--accent-ink:#fff;--heat:#ff6b35;--good:#17935f;--track:#e3e8f0;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c121c;--card:#151d2b;--ink:#eef2f8;--mute:#93a0b5;--line:#243044;--accent:#6f8dff;--accent-ink:#0c121c;--heat:#ff8a5c;--good:#3ccf8e;--track:#222d40;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c121c;--card:#151d2b;--ink:#eef2f8;--mute:#93a0b5;--line:#243044;--accent:#6f8dff;--accent-ink:#0c121c;--heat:#ff8a5c;--good:#3ccf8e;--track:#222d40;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.45 Barlow,system-ui,-apple-system,"Segoe UI",sans-serif}
+h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",Impact,sans-serif;margin:0;letter-spacing:.01em}
+h1{font-size:2.6rem;line-height:1}h2{font-size:1.6rem}h3{font-size:1.2rem}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 96px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+label{display:block;font-size:.9rem;color:var(--mute);margin:12px 0 4px}
+input,select{width:100%;padding:12px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
+button{font:600 1rem Barlow,sans-serif;cursor:pointer;border:0;border-radius:10px;padding:12px 16px;background:var(--accent);color:var(--accent-ink)}
+button.ghost{background:transparent;color:var(--mute);border:1px solid var(--line)}
+button.full{width:100%;margin-top:16px}
+.err{color:var(--heat);font-size:.9rem;min-height:1.2em;margin-top:8px}
+.hello{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hello small{color:var(--mute)}
+.ringbox{display:flex;align-items:center;gap:18px}
+.ring{position:relative;width:150px;height:150px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring b{font:700 2.4rem/1 "Barlow Condensed",sans-serif}
+.ring span{font-size:.8rem;color:var(--mute)}
+.facts{flex:1;display:grid;gap:8px}
+.facts div{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:6px;font-size:.95rem}
+.facts div span{color:var(--mute)}
+.bar{height:10px;background:var(--track);border-radius:6px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--good);width:0}
+.entry{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.entry:last-child{border-bottom:0}
+.entry small{color:var(--mute);display:block}
+.entry button{padding:6px 10px;background:transparent;color:var(--mute);border:1px solid var(--line)}
+.days{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.days button{flex:none;background:var(--card);color:var(--ink);border:1px solid var(--line);padding:8px 12px}
+.days button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.ex{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.ex:last-child{border-bottom:0}
+.ex input{width:22px;height:22px;accent-color:var(--accent);flex:none}
+.ex.done span{text-decoration:line-through;color:var(--mute)}
+.ex small{display:block;color:var(--mute)}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav div{display:flex;max-width:560px;width:100%}
+nav button{flex:1;background:transparent;color:var(--mute);border-radius:0;padding:14px 8px}
+nav button[aria-current="page"]{color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
+.empty{color:var(--mute);padding:8px 0}
+.tag{display:inline-block;background:var(--track);border-radius:20px;padding:2px 10px;font-size:.85rem;color:var(--mute)}
+.note{font-size:.85rem;color:var(--mute);margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const GOALS={
+abs:{n:"Get abs (lean cut)",adj:.85,p:2.2,tip:"Mild deficit with high protein so you lose fat and keep muscle."},
+maintain:{n:"Maintain muscle and weight",adj:1,p:1.8,tip:"Eat at maintenance and keep lifting heavy."},
+lose:{n:"Lose weight",adj:.8,p:2,tip:"A steady deficit of about 20% — roughly 0.5 kg per week."},
+gain:{n:"Gain weight (lean bulk)",adj:1.1,p:1.8,tip:"A small surplus to build muscle with little fat gain."}};
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const REST={t:"Rest and recover",e:["Easy 30 min walk|Keep steps above 8,000","Mobility and stretching|10 minutes"]};
+const CORE="Plank|3 × 45 sec,Hanging knee raise|3 × 12,Cable or band crunch|3 × 15,Bicycle crunch|3 × 20".split(",");
+const PLANS={
+abs:[REST,
+{t:"Upper body + core",e:["Push-ups|4 × 12","Dumbbell row|4 × 10","Shoulder press|3 × 10",...CORE.slice(0,2)]},
+{t:"HIIT + abs circuit",e:["HIIT: 30 sec on / 30 sec off|20 min","Mountain climbers|3 × 40 sec",...CORE.slice(2)]},
+{t:"Lower body",e:["Squat|4 × 8","Romanian deadlift|3 × 10","Walking lunges|3 × 12 each leg","Calf raise|3 × 15"]},
+REST,
+{t:"Full body + core",e:["Deadlift|3 × 6","Pull-ups or lat pulldown|4 × 8","Dumbbell bench press|3 × 10",...CORE.slice(0,2)]},
+{t:"Cardio + planks",e:["Steady cardio (run, bike or row)|40 min","Side plank|3 × 30 sec each side","Leg raise|3 × 12"]}],
+maintain:[REST,
+{t:"Upper body strength",e:["Bench press|4 × 6","Barbell row|4 × 6","Overhead press|3 × 8","Biceps and triceps|3 × 10 each"]},
+{t:"Lower body strength",e:["Squat|4 × 6","Romanian deadlift|3 × 8","Leg press|3 × 10","Calf raise|3 × 12"]},
+REST,
+{t:"Upper body volume",e:["Incline dumbbell press|4 × 10","Lat pulldown|4 × 10","Lateral raise|3 × 15","Face pull|3 × 15"]},
+{t:"Lower body + core",e:["Front squat|3 × 8","Hip thrust|3 × 10","Walking lunges|3 × 12",...CORE.slice(0,2)]},
+{t:"Light cardio",e:["Zone 2 cardio|30 min","Mobility work|15 min"]}],
+lose:[REST,
+{t:"Strength: full body",e:["Goblet squat|3 × 12","Push-ups|3 × 12","Dumbbell row|3 × 12","Plank|3 × 40 sec"]},
+{t:"HIIT cardio",e:["Intervals: 1 min hard / 1 min easy|25 min","Burpees|3 × 10","Jump rope|3 × 1 min"]},
+{t:"Strength: lower",e:["Squat|4 × 10","Romanian deadlift|3 × 10","Step-ups|3 × 12 each leg"]},
+REST,
+{t:"Strength: upper + core",e:["Bench press|3 × 10","Lat pulldown|3 × 10","Shoulder press|3 × 10",...CORE.slice(2)]},
+{t:"Long steady cardio",e:["Brisk walk, run or cycle|45–60 min"]}],
+gain:[REST,
+{t:"Push",e:["Bench press|4 × 6","Incline dumbbell press|3 × 10","Overhead press|3 × 8","Triceps pushdown|3 × 12"]},
+{t:"Pull",e:["Deadlift|3 × 5","Pull-ups|4 × 8","Barbell row|3 × 8","Biceps curl|3 × 12"]},
+{t:"Legs",e:["Squat|4 × 6","Romanian deadlift|3 × 8","Leg press|3 × 10","Calf raise|4 × 12"]},
+REST,
+{t:"Upper body",e:["Dumbbell bench press|4 × 8","Chest-supported row|4 × 8","Lateral raise|3 × 15","Hanging knee raise|3 × 12"]},
+{t:"Lower body",e:["Front squat|3 × 8","Hip thrust|3 × 10","Walking lunges|3 × 12","Plank|3 × 45 sec"]}]};
+const ACT=[["Mostly sitting, little exercise",1.2],["Light: 1–3 workouts a week",1.375],["Moderate: 3–5 workouts a week",1.55],["Very active: 6–7 workouts a week",1.725]];
+
+// Optional cloud sync with Supabase (see README.md). Leave both empty to use browser storage only.
+const SUPABASE_URL="";
+const SUPABASE_KEY="";
+let mem={};
+const lsOK=(()=>{try{localStorage.setItem("ft:t","1");localStorage.removeItem("ft:t");return true}catch(e){return false}})();
+let dbDoc=null;
+const canSave=()=>lsOK||!!dbDoc||!!sb;
+const store={get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return mem[k]||null}},
+set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){mem[k]=v}}};
+let users=store.get("ft:users")||{},email=store.get("ft:session"),tab="today",selDay=new Date().getDay();
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const today=()=>new Date().toLocaleDateString("en-CA");
+let saveTimer;const save=()=>{store.set("ft:users",users);store.set("ft:session",email);clearTimeout(saveTimer);saveTimer=setTimeout(()=>{const blob={users,session:email};if(sb&&sbUser)sb.from("ft_data").upsert({user_id:sbUser.id,json:blob,updated_at:new Date().toISOString()}).then(()=>{});else if(dbDoc)dbDoc.set({json:JSON.stringify(blob)}).catch(()=>{})},400)};
+const U=()=>users[email];
+
+function calc(p){
+ if(!p||!p.w||!p.h||!p.age)return null;
+ const bmr=10*p.w+6.25*p.h-5*p.age+(p.sex==="m"?5:-161);
+ const tdee=Math.round(bmr*p.act),g=GOALS[p.goal];
+ return{tdee,target:Math.round(tdee*g.adj),protein:Math.round(p.w*g.p)};
+}
+
+function render(){
+ const app=$("#app");
+ if(!email||!users[email]){app.innerHTML=loginHTML();bindLogin();return}
+ const u=U(),c=calc(u.profile);
+ if(!c&&tab!=="profile")tab="profile";
+ app.innerHTML=`<div class="hello"><div><small>Signed in as ${esc(u.email)}</small><h2>Hi, ${esc(u.name)}</h2></div><button class="ghost" id="out">Sign out</button></div>`
+ +(canSave()?"":'<p class="note">Saving is blocked in this preview. Your data resets when you reload.</p>')
+ +(tab==="today"?todayHTML(u,c):tab==="plan"?planHTML(u):profileHTML(u,c))
+ +`<nav><div>${[["today","Today"],["plan","Workouts"],["profile","Profile"]].map(([k,l])=>`<button data-tab="${k}" ${tab===k?'aria-current="page"':""}>${l}</button>`).join("")}</div></nav>`;
+ $("#out").onclick=async()=>{if(sb){clearTimeout(saveTimer);try{if(sbUser)await sb.from("ft_data").upsert({user_id:sbUser.id,json:{users,session:email},updated_at:new Date().toISOString()});await sb.auth.signOut()}catch(e){}sbUser=null;users={}}email=null;save();render()};
+ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{if(!c&&b.dataset.tab!=="profile")return;tab=b.dataset.tab;render()});
+ if(tab==="today")bindToday();else if(tab==="plan")bindPlan();else bindProfile();
+}
+
+function loginHTML(){if(sb)return loginSbHTML();return`<h1 style="margin-top:32px">FormTrack</h1><p style="color:var(--mute)">Know your calories. Follow your workout. Build abs and keep your muscle.</p>
+<div class="card"><h3>Sign in or create your profile</h3>
+<label for="n">Name</label><input id="n" autocomplete="name">
+<label for="e">Email</label><input id="e" type="email" autocomplete="email">
+<div class="err" id="err" role="alert"></div>
+<button class="full" id="go">Continue</button>
+<p class="note">${canSave()?(dbDoc?"Your data is saved to your claude.ai account, so it follows you across devices.":"Your data is saved on this device only. Use the same email to get back to your plan."):"Saving is blocked in this preview, so your data resets when you reload. Open the file from your own computer or site to keep it."}</p></div>`}
+function bindLogin(){
+ if(sb)return bindLoginSb();
+ $("#go").onclick=()=>{
+  const n=$("#n").value.trim(),e=$("#e").value.trim().toLowerCase();
+  if(!n)return $("#err").textContent="Enter your name.";
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))return $("#err").textContent="Enter a valid email address.";
+  if(!users[e])users[e]={name:n,email:e,profile:null,logs:{},done:{}};else users[e].name=n;
+  email=e;save();store.set("ft:session",e);tab=calc(users[e].profile)?"today":"profile";render();
+ };
+}
+
+// ---- Supabase account login (only active when SUPABASE_URL and SUPABASE_KEY are set)
+let sb=null,sbUser=null;
+const loadScript=src=>new Promise((ok,no)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+function loginSbHTML(){return`<h1 style="margin-top:32px">FormTrack</h1><p style="color:var(--mute)">Know your calories. Follow your workout. Build abs and keep your muscle.</p>
+<div class="card"><h3>Sign in or create an account</h3>
+<label for="n">Name (for a new account)</label><input id="n" autocomplete="name">
+<label for="e">Email</label><input id="e" type="email" autocomplete="email">
+<label for="pw">Password (at least 6 characters)</label><input id="pw" type="password" autocomplete="current-password">
+<div class="err" id="err" role="alert"></div>
+<div class="row"><button class="full" id="si">Sign in</button><button class="full ghost" id="su">Create account</button></div>
+<p class="note">Your data is saved to your account and follows you across devices.</p></div>`}
+async function enterAs(user,nameHint){
+ const em=user.email.toLowerCase(),local=users[em];
+ sbUser=user;
+ const {data}=await sb.from("ft_data").select("json").eq("user_id",user.id).maybeSingle();
+ users=(data&&data.json&&data.json.users)||{};
+ if(!users[em])users[em]=local||{name:nameHint||(user.user_metadata&&user.user_metadata.name)||em.split("@")[0],email:em,profile:null,logs:{},done:{}};
+ email=em;save();tab=calc(users[em].profile)?"today":"profile";render();
+}
+function bindLoginSb(){
+ const go=async mode=>{
+  const n=$("#n").value.trim(),e=$("#e").value.trim().toLowerCase(),p=$("#pw").value;
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))return $("#err").textContent="Enter a valid email address.";
+  if(p.length<6)return $("#err").textContent="Password needs at least 6 characters.";
+  if(mode==="up"&&!n)return $("#err").textContent="Enter your name to create an account.";
+  $("#err").textContent="Please wait…";
+  try{
+   const r=mode==="up"?await sb.auth.signUp({email:e,password:p,options:{data:{name:n}}}):await sb.auth.signInWithPassword({email:e,password:p});
+   if(r.error)return $("#err").textContent=r.error.message;
+   if(!r.data.session)return $("#err").textContent="Check your email to confirm your account, then sign in.";
+   await enterAs(r.data.user,n);
+  }catch(x){$("#err").textContent="Could not reach the server. Check your connection."}
+ };
+ $("#si").onclick=()=>go("in");$("#su").onclick=()=>go("up");
+}
+
+function todayHTML(u,c){
+ const log=u.logs[today()]||[],eaten=log.reduce((s,x)=>s+x.cal,0),prot=log.reduce((s,x)=>s+(x.p||0),0);
+ const left=c.target-eaten,pct=Math.min(eaten/c.target,1),R=66,C=2*Math.PI*R;
+ return`<div class="card"><div class="ringbox"><div class="ring"><svg width="150" height="150"><circle cx="75" cy="75" r="${R}" fill="none" stroke="var(--track)" stroke-width="14"/><circle cx="75" cy="75" r="${R}" fill="none" stroke="${left<0?"var(--heat)":"var(--accent)"}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}"/></svg>
+ <div class="mid"><b>${Math.abs(left)}</b><span>${left<0?"kcal over":"kcal left"}</span></div></div>
+ <div class="facts"><div><span>Eaten</span>${eaten}</div><div><span>Daily target</span>${c.target}</div><div><span>Maintenance</span>${c.tdee}</div></div></div>
+ <label>Protein: ${prot} g of ${c.protein} g</label><div class="bar"><i style="width:${Math.min(prot/c.protein*100,100)}%"></i></div>
+ <p class="note"><span class="tag">${GOALS[u.profile.goal].n}</span> ${GOALS[u.profile.goal].tip}</p></div>
+ <div class="card"><h3>Log food</h3>
+ <label for="fn">Food</label><input id="fn" placeholder="e.g. Chicken rice bowl">
+ <div class="row"><div><label for="fc">Calories</label><input id="fc" type="number" inputmode="numeric" min="0"></div>
+ <div><label for="fp">Protein (g)</label><input id="fp" type="number" inputmode="numeric" min="0"></div></div>
+ <label for="fm">Meal</label><select id="fm"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select>
+ <div class="err" id="err" role="alert"></div><button class="full" id="add">Add to today</button></div>
+ <div class="card"><h3>Today’s log</h3>${log.length?log.map((x,i)=>`<div class="entry"><div>${esc(x.name)}<small>${esc(x.meal)} · ${x.cal} kcal${x.p?" · "+x.p+" g protein":""}</small></div><button data-del="${i}" aria-label="Remove ${esc(x.name)}">Remove</button></div>`).join(""):'<div class="empty">Nothing logged yet. Add your first meal above.</div>'}</div>`;
+}
+function bindToday(){
+ $("#add").onclick=()=>{
+  const name=$("#fn").value.trim(),cal=+$("#fc").value,p=+$("#fp").value||0;
+  if(!name||!(cal>0))return $("#err").textContent="Add a food name and calories above 0.";
+  const d=today();(U().logs[d]=U().logs[d]||[]).push({name,cal:Math.round(cal),p:Math.round(p),meal:$("#fm").value});save();render();
+ };
+ document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{U().logs[today()].splice(+b.dataset.del,1);save();render()});
+}
+
+function planHTML(u){
+ const plan=PLANS[u.profile.goal],d=plan[selDay],done=(u.done[today()]=u.done[today()]||{});
+ const isToday=selDay===new Date().getDay();
+ return`<div class="card"><h3>${GOALS[u.profile.goal].n}</h3><p class="note" style="margin-top:4px">Weekly plan. Pick a day to see it.</p>
+ <div class="days">${DAYS.map((x,i)=>`<button data-d="${i}" aria-pressed="${i===selDay}">${x}${i===new Date().getDay()?" •":""}</button>`).join("")}</div></div>
+ <div class="card"><h2>${d.t}</h2>${d.e.map((x,i)=>{const[n,r]=x.split("|"),k=selDay+"-"+i;return`<label class="ex ${done[k]?"done":""}" style="margin:0;color:var(--ink)"><input type="checkbox" data-k="${k}" ${done[k]?"checked":""} ${isToday?"":"disabled"}><span>${n}<small>${r}</small></span></label>`}).join("")}
+ ${isToday?"":'<p class="note">You can tick off exercises on the day itself.</p>'}</div>
+ <p class="note">Warm up for 5 minutes first. Rest 60–90 sec between sets. Abs show when body fat is low enough, so training and your calorie target work together.</p>`;
+}
+function bindPlan(){
+ document.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{selDay=+b.dataset.d;render()});
+ document.querySelectorAll("[data-k]").forEach(b=>b.onchange=()=>{const d=U().done[today()]=U().done[today()]||{};d[b.dataset.k]=b.checked;save();render()});
+}
+
+function profileHTML(u,c){
+ const p=u.profile||{sex:"m",act:1.375,goal:"abs"};
+ return`<div class="card"><h3>Your profile</h3>${c?"":'<p class="note">Fill this in once to get your daily calories and workout plan.</p>'}
+ <label for="pn">Name</label><input id="pn" value="${esc(u.name)}">
+ <label>Email</label><input value="${esc(u.email)}" disabled>
+ <div class="row"><div><label for="pa">Age</label><input id="pa" type="number" inputmode="numeric" value="${p.age||""}"></div>
+ <div><label for="ps">Sex</label><select id="ps"><option value="m" ${p.sex==="m"?"selected":""}>Male</option><option value="f" ${p.sex==="f"?"selected":""}>Female</option></select></div></div>
+ <div class="row"><div><label for="ph">Height (cm)</label><input id="ph" type="number" inputmode="numeric" value="${p.h||""}"></div>
+ <div><label for="pw">Weight (kg)</label><input id="pw" type="number" inputmode="decimal" value="${p.w||""}"></div></div>
+ <label for="pc">Activity level</label><select id="pc">${ACT.map(([l,v])=>`<option value="${v}" ${+p.act===v?"selected":""}>${l}</option>`).join("")}</select>
+ <label for="pg">Goal</label><select id="pg">${Object.entries(GOALS).map(([k,g])=>`<option value="${k}" ${p.goal===k?"selected":""}>${g.n}</option>`).join("")}</select>
+ <div class="err" id="err" role="alert"></div><button class="full" id="sv">Save and see my plan</button></div>
+ ${c?`<div class="card"><h3>Your numbers</h3><div class="facts" style="margin-top:10px"><div><span>Maintenance calories</span>${c.tdee} kcal</div><div><span>Daily target</span>${c.target} kcal</div><div><span>Protein</span>${c.protein} g</div></div>
+ <p class="note">Estimated with the Mifflin-St Jeor formula. Adjust after 2–3 weeks based on how your weight changes.</p></div>`:""}`;
+}
+function bindProfile(){
+ $("#sv").onclick=()=>{
+  const p={age:+$("#pa").value,sex:$("#ps").value,h:+$("#ph").value,w:+$("#pw").value,act:+$("#pc").value,goal:$("#pg").value},n=$("#pn").value.trim();
+  if(!n)return $("#err").textContent="Enter your name.";
+  if(!(p.age>=14&&p.age<=90)||!(p.h>=120&&p.h<=230)||!(p.w>=30&&p.w<=250))return $("#err").textContent="Check your age (14–90), height (120–230 cm) and weight (30–250 kg).";
+  U().name=n;U().profile=p;save();tab="today";selDay=new Date().getDay();render();
+ };
+}
+// Optional cloud save: only runs on the claude.ai published page. Anywhere else (GitHub Pages, local file) it is skipped and localStorage is used.
+async function initStore(){
+ try{
+  if(SUPABASE_URL&&SUPABASE_KEY){
+   try{
+    await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js");
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    const {data}=await sb.auth.getSession();
+    if(data.session){await enterAs(data.session.user)}else{users={};email=null}
+    return;
+   }catch(e){sb=null;sbUser=null}
+  }
+  if(!(window.claude&&window.claude.use))return;
+  const [db,user]=await Promise.all([claude.use("db"),claude.use("user")]);
+  if(!db||!user)return;
+  const id=await user.id();
+  if(!id)return;
+  const ref=db.collection("data/users/"+id).doc("ft");
+  const snap=await ref.get();
+  if(snap.exists){const j=snap.data().json;if(j){const r=JSON.parse(j);users=r.users||users;email=r.session||null}}
+  dbDoc=ref;
+  if(!snap.exists&&Object.keys(users).length)save();
+ }catch(e){dbDoc=null}
+}
+Promise.race([initStore(),new Promise(r=>setTimeout(r,SUPABASE_URL?10000:4000))]).then(render,render);
+</script>
+</body>
+</html>
