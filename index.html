@@ -102,8 +102,8 @@ REST,
 const ACT=[["Mostly sitting, little exercise",1.2],["Light: 1–3 workouts a week",1.375],["Moderate: 3–5 workouts a week",1.55],["Very active: 6–7 workouts a week",1.725]];
 
 // Optional cloud sync with Supabase (see README.md). Leave both empty to use browser storage only.
-const SUPABASE_URL="";
-const SUPABASE_KEY="";
+const SUPABASE_URL="https://lideofxqavscjbmuvwmb.supabase.co/rest/v1/";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpZGVvZnhxYXZzY2pibXV2d21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5Mjk1OTEsImV4cCI6MjEwODUwNTU5MX0.94P13i-EJ3CJ67GCMPcYEaVVa0mAIfXDIzg85TPgpmA";
 let mem={};
 const lsOK=(()=>{try{localStorage.setItem("ft:t","1");localStorage.removeItem("ft:t");return true}catch(e){return false}})();
 let dbDoc=null;
